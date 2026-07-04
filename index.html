@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TL ウォーターマーク強化ツール</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --border: #30363d;
+  --accent: #58a6ff;
+  --accent2: #a371f7;
+  --text: #c9d1d9;
+  --text-muted: #8b949e;
+  --green: #3fb950;
+  --orange: #d29922;
+  --red: #f85149;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.container { max-width: 860px; margin: 0 auto; }
+
+header { margin-bottom: 20px; }
+header h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+header p { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.hint {
+  background: var(--surface2);
+  border-left: 3px solid var(--accent2);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.hint strong { color: var(--text); }
+
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 500px) { .input-grid { grid-template-columns: 1fr; } }
+
+.field label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+input[type="number"] {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type="number"]:focus { border-color: var(--accent); }
+
+.range-row { margin-bottom: 12px; }
+.range-row label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px; }
+.range-row label strong { color: var(--accent); font-size: 0.95rem; }
+input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+.btn {
+  background: var(--accent);
+  color: #0d1117;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.wm-display {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.wm-big { font-size: 3.5rem; font-weight: 800; color: var(--accent); line-height: 1; }
+.wm-caption { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+.prob-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.prob-table th, .prob-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.prob-table th { color: var(--text-muted); font-weight: 500; font-size: 0.7rem; text-transform: uppercase; }
+.prob-table tbody tr:last-child td { border-bottom: none; }
+.prob-table td:not(:first-child) { text-align: right; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 400px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+
+.stat-box {
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-value { font-size: 1.6rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
+.stat-label { font-size: 0.68rem; color: var(--text-muted); margin-top: 3px; }
+
+#sim-chart { display: block; width: 100%; border-radius: 4px; }
+
+.table-wrap { overflow-x: auto; }
+
+.heat-table { border-collapse: collapse; font-size: 0.72rem; white-space: nowrap; }
+.heat-table th, .heat-table td {
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.heat-table thead th {
+  background: var(--surface2);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.heat-table .wm-col {
+  background: var(--surface2);
+  font-weight: 600;
+  color: var(--text);
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.heat-table .wm-col-header {
+  background: var(--surface2);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+.progress {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.il-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 0.875rem;
+}
+.il-cat { width: 110px; color: var(--text-muted); }
+.il-val { font-weight: 600; }
+
+.bar-cell { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.mini-bar { height: 6px; border-radius: 3px; opacity: 0.7; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>TL ウォーターマーク強化ツール</h1>
+    <p>Throne and Liberty — ギア強化シミュレーター | データ出典: How to Level Up Gear by Aragon &amp; Kninebeat (2026-07-04)</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="calc">計算</button>
+    <button class="tab-btn" data-tab="sim">シミュレーション</button>
+    <button class="tab-btn" data-tab="table">確率表</button>
+  </div>
+
+  <!-- Tab 1 -->
+  <div id="tab-calc" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">ウォーターマーク (WM) とは?</div>
+      <div class="hint">
+        <strong>Watermark</strong> = 武器 / 防具 / アクセサリー それぞれのカテゴリで<strong>これまでに奥義した最高 IL</strong> を3つ平均した値 (端数切り捨て)。<br>
+        次のドロップ IL はこの WM を基準に確率分布で決まります。<br>
+        カテゴリ間の IL 差が大きいと全体 WM が頭打ちになるため、<strong>最も低いカテゴリを優先して強化する</strong>のが効率的です。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">現在の最高アイテムレベル</div>
+      <div class="input-grid">
+        <div class="field">
+          <label>武器 IL</label>
+          <input type="number" id="c-weapon" min="21" max="80" value="60">
+        </div>
+        <div class="field">
+          <label>防具 IL</label>
+          <input type="number" id="c-armor" min="21" max="80" value="60">
+        </div>
+        <div class="field">
+          <label>アクセサリー IL</label>
+          <input type="number" id="c-acc" min="21" max="80" value="60">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="calc-result" style="display:none">
+      <div class="card-title">現在のウォーターマーク</div>
+      <div class="wm-display">
+        <div>
+          <div class="wm-big" id="wm-val">--</div>
+          <div class="wm-caption">Watermark</div>
+        </div>
+        <div id="wm-breakdown"></div>
+      </div>
+      <div id="weak-hint" class="hint" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card" id="calc-prob-card" style="display:none">
+      <div class="card-title">次のドロップ確率 (WM <span id="prob-wm-label">--</span> 基準)</div>
+      <table class="prob-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">ドロップ IL</th>
+            <th>WMとの差</th>
+            <th>確率</th>
+            <th>累積確率</th>
+          </tr>
+        </thead>
+        <tbody id="calc-prob-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab 2 -->
+  <div id="tab-sim" class="tab-panel">
+    <div class="card">
+      <div class="card-title">シミュレーション設定</div>
+      <div class="hint" style="margin-bottom:14px">
+        ※ ドロップカテゴリ (武器 / 防具 / アクセサリー) は均等 1/3 確率で割り当てると仮定しています。実際のゲーム内確率と異なる場合があります。
+      </div>
+      <div class="input-grid">
+        <div class="field">
+          <label>武器 現在 IL</label>
+          <input type="number" id="s-weapon" min="21" max="80" value="60">
+        </div>
+        <div class="field">
+          <label>防具 現在 IL</label>
+          <input type="number" id="s-armor" min="21" max="80" value="60">
+        </div>
+        <div class="field">
+          <label>アクセサリー 現在 IL</label>
+          <input type="number" id="s-acc" min="21" max="80" value="60">
+        </div>
+      </div>
+      <div class="range-row">
+        <label>目標 Watermark: <strong id="s-target-val">65</strong></label>
+        <input type="range" id="s-target" min="22" max="80" value="65">
+      </div>
+      <div class="range-row">
+        <label>試行回数: <strong id="s-trials-val">10,000</strong></label>
+        <input type="range" id="s-trials" min="1000" max="50000" step="1000" value="10000">
+      </div>
+      <button class="btn" id="sim-btn" onclick="runSimulation()">シミュレーション実行</button>
+    </div>
+
+    <div id="sim-progress" class="progress" style="display:none">計算中... しばらくお待ちください</div>
+
+    <div id="sim-result" style="display:none">
+      <div class="card">
+        <div class="card-title">シミュレーション結果</div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="sim-mean">--</div>
+            <div class="stat-label">平均ドロップ数</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="sim-median">--</div>
+            <div class="stat-label">中央値</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="sim-p90">--</div>
+            <div class="stat-label">90 パーセンタイル</div>
+          </div>
+        </div>
+        <div id="sim-percentiles" style="font-size:0.78rem;color:var(--text-muted);line-height:1.8"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">ドロップ数の分布</div>
+        <canvas id="sim-chart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3 -->
+  <div id="tab-table" class="tab-panel">
+    <div class="card">
+      <div class="card-title">WM 別確率詳細</div>
+      <div class="range-row">
+        <label>Watermark: <strong id="t-wm-val">60</strong></label>
+        <input type="range" id="t-wm" min="21" max="80" value="60">
+      </div>
+      <table class="prob-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">ドロップ IL</th>
+            <th>オフセット</th>
+            <th style="text-align:left">確率</th>
+          </tr>
+        </thead>
+        <tbody id="detail-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">全 WM ヒートマップ (行: WM / 列: オフセット)</div>
+      <div class="table-wrap">
+        <table class="heat-table" id="heat-table"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ────────────────────────────────────────────────────
+const DATA = {"21":{"0":10.0,"1":81.0,"2":6.0,"3":3.0},"22":{"0":10.0,"1":81.0,"2":6.0,"3":3.0},"23":{"0":10.01,"1":80.99,"2":6.0,"3":3.0},"24":{"-1":0.01,"0":10.03,"1":80.96,"2":6.0,"3":3.0},"25":{"-1":0.02,"0":10.08,"1":80.91,"2":5.99,"3":3.0},"26":{"-2":0.01,"-1":0.03,"0":10.16,"1":80.82,"2":5.99,"3":2.99},"27":{"-2":0.01,"-1":0.06,"0":10.28,"1":80.68,"2":5.98,"3":2.99},"28":{"-3":0.01,"-2":0.01,"-1":0.1,"0":10.47,"1":80.47,"2":5.96,"3":2.98},"29":{"-3":0.01,"-2":0.03,"-1":0.14,"0":10.72,"1":80.19,"2":5.94,"3":2.97},"30":{"-3":0.02,"-2":0.03,"-1":0.21,"0":11.05,"1":79.82,"2":5.91,"3":2.96},"31":{"-3":0.02,"-2":0.05,"-1":0.3,"0":11.47,"1":79.34,"2":5.88,"3":2.94},"32":{"-3":0.03,"-2":0.07,"-1":0.4,"0":11.99,"1":78.76,"2":5.83,"3":2.92},"33":{"-3":0.04,"-2":0.09,"-1":0.53,"0":12.64,"1":78.03,"2":5.78,"3":2.89},"34":{"-3":0.06,"-2":0.11,"-1":0.68,"0":13.41,"1":77.17,"2":5.71,"3":2.86},"35":{"-3":0.07,"-2":0.15,"-1":0.86,"0":14.32,"1":76.14,"2":5.64,"3":2.82},"36":{"-3":0.09,"-2":0.18,"-1":1.08,"0":15.39,"1":74.93,"2":5.55,"3":2.78},"37":{"-3":0.11,"-2":0.22,"-1":1.33,"0":16.64,"1":73.53,"2":5.45,"3":2.72},"38":{"-3":0.13,"-2":0.27,"-1":1.62,"0":18.06,"1":71.93,"2":5.33,"3":2.66},"39":{"-3":0.16,"-2":0.32,"-1":1.94,"0":19.69,"1":70.1,"2":5.19,"3":2.6},"40":{"-3":0.19,"-2":0.39,"-1":2.3,"0":21.52,"1":68.04,"2":5.04,"3":2.52},"41":{"-3":0.23,"-2":0.45,"-1":2.72,"0":23.58,"1":65.72,"2":4.87,"3":2.43},"42":{"-3":0.26,"-2":0.53,"-1":3.18,"0":25.89,"1":63.13,"2":4.67,"3":2.34},"43":{"-3":0.31,"-2":0.61,"-1":3.69,"0":28.44,"1":60.25,"2":4.47,"3":2.23},"44":{"-3":0.35,"-2":0.71,"-1":4.26,"0":31.27,"1":57.07,"2":4.23,"3":2.11},"45":{"-3":0.41,"-2":0.81,"-1":4.88,"0":34.39,"1":53.56,"2":3.97,"3":1.98},"46":{"-3":0.46,"-2":0.93,"-1":5.56,"0":37.8,"1":49.72,"2":3.69,"3":1.84},"47":{"-3":0.53,"-2":1.05,"-1":6.3,"0":41.53,"1":45.53,"2":3.37,"3":1.69},"48":{"-3":0.59,"-2":1.19,"-1":7.12,"0":45.59,"1":40.96,"2":4.55},"49":{"-3":0.67,"-2":1.33,"-1":8.0,"0":50.0,"1":40.0},"50":{"-3":5.0,"-2":10.0,"-1":35.0,"0":50.0},"51":{"0":33.33,"1":66.67},"52":{"0":33.33,"1":66.67},"53":{"-2":0.01,"-1":0.01,"0":33.34,"1":66.64},"54":{"-2":0.01,"-1":0.04,"0":33.35,"1":66.6},"55":{"-3":0.01,"-2":0.02,"-1":0.1,"0":33.38,"1":66.49},"56":{"-3":0.02,"-2":0.04,"-1":0.19,"0":33.42,"1":66.33},"57":{"-3":0.04,"-2":0.07,"-1":0.33,"0":33.49,"1":66.07},"58":{"-3":0.06,"-2":0.12,"-1":0.52,"0":33.59,"1":65.71},"59":{"-3":0.09,"-2":0.17,"-1":0.78,"0":33.72,"1":65.24},"60":{"-3":0.12,"-2":0.25,"-1":1.11,"0":33.88,"1":64.64},"61":{"-3":0.17,"-2":0.34,"-1":1.53,"0":34.08,"1":63.88},"62":{"-3":0.23,"-2":0.45,"-1":2.03,"0":34.33,"1":62.96},"63":{"-3":0.29,"-2":0.59,"-1":2.64,"0":34.63,"1":61.85},"64":{"-3":0.37,"-2":0.75,"-1":3.36,"0":34.99,"1":60.53},"65":{"-3":0.47,"-2":0.93,"-1":4.2,"0":35.4,"1":59.0},"66":{"-3":0.57,"-2":1.15,"-1":5.17,"0":35.88,"1":57.23},"67":{"-3":0.7,"-2":1.39,"-1":6.27,"0":36.43,"1":55.21},"68":{"-3":0.84,"-2":1.67,"-1":7.53,"0":37.05,"1":52.91},"69":{"-3":0.99,"-2":1.99,"-1":8.94,"0":37.75,"1":50.33},"70":{"-3":1.17,"-2":2.34,"-1":10.51,"0":38.52,"1":47.46},"71":{"-3":1.36,"-2":2.73,"-1":12.27,"0":39.39,"1":44.25},"72":{"-3":1.58,"-2":3.16,"-1":14.21,"0":40.35,"1":40.7},"73":{"-3":1.82,"-2":3.63,"-1":16.34,"0":41.4,"1":36.81},"74":{"-3":2.08,"-2":4.15,"-1":18.68,"0":42.56,"1":32.53},"75":{"-3":2.36,"-2":4.72,"-1":21.23,"0":43.82,"1":27.87},"76":{"-3":2.67,"-2":5.33,"-1":24.0,"0":45.19,"1":22.81},"77":{"-3":3.0,"-2":6.0,"-1":27.01,"0":46.67,"1":17.32},"78":{"-3":3.36,"-2":6.73,"-1":30.25,"0":48.27,"1":11.39},"79":{"-3":3.75,"-2":7.5,"-1":33.75,"0":50.0,"1":5.0},"80":{"-3":7.0,"-2":14.0,"-1":49.0,"0":30.0}};
+
+// ── Helpers ──────────────────────────────────────────────────
+// All dynamic values inserted into the DOM are numbers computed
+// from the embedded DATA constant and parseInt/Math.round.
+// esc() is applied defensively to every interpolated value.
+function esc(v) {
+  return String(v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function wmOf(w, a, ac) { return Math.round((w + a + ac) / 3); }
+function getRow(wm) { return DATA[String(clamp(wm, 21, 80))]; }
+
+function weightedRandom(row) {
+  const entries = Object.entries(row);
+  let r = Math.random() * 100;
+  for (const [k, v] of entries) {
+    r -= v;
+    if (r <= 0) return parseInt(k, 10);
+  }
+  return parseInt(entries[entries.length - 1][0], 10);
+}
+
+function offStr(off) { return off > 0 ? '+' + off : String(off); }
+function offColor(off) {
+  return off > 0 ? 'var(--green)' : off < 0 ? 'var(--red)' : 'var(--text)';
+}
+
+// ── Tab switching ────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'table') {
+      if (!heatBuilt) buildHeatmap();
+      updateDetailTable();
+    }
+  });
+});
+
+// ── Tab 1: Calculator ─────────────────────────────────────────
+function calcWatermark() {
+  const w  = parseInt(document.getElementById('c-weapon').value, 10);
+  const a  = parseInt(document.getElementById('c-armor').value, 10);
+  const ac = parseInt(document.getElementById('c-acc').value, 10);
+  if (isNaN(w) || isNaN(a) || isNaN(ac)) return;
+  if (w < 21 || a < 21 || ac < 21 || w > 80 || a > 80 || ac > 80) return;
+
+  const wm = wmOf(w, a, ac);
+  document.getElementById('wm-val').textContent = wm;
+  document.getElementById('prob-wm-label').textContent = wm;
+  document.getElementById('calc-result').style.display = 'block';
+
+  // Breakdown using DOM (no untrusted HTML)
+  const cats = [
+    { emoji: 'Wu', name: '武器',       val: w  },
+    { emoji: 'Ar', name: '防具',       val: a  },
+    { emoji: 'Ac', name: 'アクセサリー', val: ac },
+  ];
+  const minIL = Math.min(w, a, ac);
+  const breakdown = document.getElementById('wm-breakdown');
+  breakdown.textContent = '';
+  cats.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'il-row';
+
+    const catEl = document.createElement('span');
+    catEl.className = 'il-cat';
+    catEl.textContent = c.name;
+    row.appendChild(catEl);
+
+    const valEl = document.createElement('span');
+    valEl.className = 'il-val';
+    valEl.textContent = c.val;
+    valEl.style.color = c.val === minIL ? 'var(--orange)' : 'var(--text)';
+    row.appendChild(valEl);
+
+    if (c.val === minIL) {
+      const tag = document.createElement('span');
+      tag.textContent = '優先';
+      tag.style.cssText = 'display:inline-block;background:rgba(210,153,34,.2);border:1px solid rgba(210,153,34,.5);color:var(--orange);border-radius:4px;padding:1px 7px;font-size:.72rem;font-weight:600;margin-left:4px';
+      row.appendChild(tag);
+    }
+    breakdown.appendChild(row);
+  });
+
+  // Weak hint
+  const weakCats = cats.filter(c => c.val === minIL).map(c => c.name);
+  const hintEl = document.getElementById('weak-hint');
+  hintEl.textContent = '';
+  if (weakCats.length < 3) {
+    const strong = document.createElement('strong');
+    strong.textContent = weakCats.join(' / ') + ' (IL ' + minIL + ')';
+    hintEl.appendChild(document.createTextNode('最も低いカテゴリ: '));
+    hintEl.appendChild(strong);
+    hintEl.appendChild(document.createTextNode(' —— こちらを優先して強化しましょう。'));
+  } else {
+    hintEl.textContent = '全カテゴリが均等です。どれを強化しても効率は同じです。';
+  }
+
+  renderProbTable(wm, 'calc-prob-body', true);
+  document.getElementById('calc-prob-card').style.display = 'block';
+}
+
+function renderProbTable(wm, tbodyId, showCumulative) {
+  const row = getRow(wm);
+  if (!row) return;
+  const offsets = Object.keys(row).map(Number).sort((a, b) => b - a);
+  const maxProb = Math.max(...Object.values(row));
+  const tbody = document.getElementById(tbodyId);
+  tbody.textContent = '';
+  let cumulative = 0;
+
+  offsets.forEach(off => {
+    const prob = row[String(off)];
+    cumulative += prob;
+    const il = wm + off;
+    const barW = Math.round((prob / maxProb) * 80);
+    const color = offColor(off);
+
+    const tr = document.createElement('tr');
+
+    // IL cell
+    const tdIL = document.createElement('td');
+    const strong = document.createElement('strong');
+    strong.textContent = il;
+    tdIL.appendChild(strong);
+    tr.appendChild(tdIL);
+
+    // Offset cell
+    const tdOff = document.createElement('td');
+    tdOff.style.color = color;
+    tdOff.textContent = offStr(off);
+    tr.appendChild(tdOff);
+
+    // Prob + bar cell
+    const tdProb = document.createElement('td');
+    const barDiv = document.createElement('div');
+    barDiv.className = 'bar-cell';
+    const span = document.createElement('span');
+    span.textContent = prob.toFixed(2) + '%';
+    const bar = document.createElement('div');
+    bar.className = 'mini-bar';
+    bar.style.width = barW + 'px';
+    bar.style.background = color;
+    barDiv.appendChild(span);
+    barDiv.appendChild(bar);
+    tdProb.appendChild(barDiv);
+    tr.appendChild(tdProb);
+
+    // Cumulative cell
+    if (showCumulative) {
+      const tdCum = document.createElement('td');
+      tdCum.style.color = 'var(--text-muted)';
+      tdCum.textContent = cumulative.toFixed(2) + '%';
+      tr.appendChild(tdCum);
+    }
+
+    tbody.appendChild(tr);
+  });
+}
+
+['c-weapon', 'c-armor', 'c-acc'].forEach(id =>
+  document.getElementById(id).addEventListener('input', calcWatermark)
+);
+
+// ── Tab 2: Simulation ─────────────────────────────────────────
+document.getElementById('s-target').addEventListener('input', function () {
+  document.getElementById('s-target-val').textContent = this.value;
+});
+document.getElementById('s-trials').addEventListener('input', function () {
+  document.getElementById('s-trials-val').textContent = Number(this.value).toLocaleString();
+});
+
+function runSimulation() {
+  const w0  = parseInt(document.getElementById('s-weapon').value, 10) || 60;
+  const a0  = parseInt(document.getElementById('s-armor').value, 10)  || 60;
+  const ac0 = parseInt(document.getElementById('s-acc').value, 10)    || 60;
+  const target = parseInt(document.getElementById('s-target').value, 10);
+  const trials = parseInt(document.getElementById('s-trials').value, 10);
+
+  if (wmOf(w0, a0, ac0) >= target) {
+    alert('現在の WM はすでに目標以上です。');
+    return;
+  }
+
+  document.getElementById('sim-result').style.display = 'none';
+  document.getElementById('sim-progress').style.display = 'block';
+  document.getElementById('sim-btn').disabled = true;
+
+  setTimeout(() => {
+    const results = [];
+    for (let t = 0; t < trials; t++) {
+      let w = w0, a = a0, ac = ac0;
+      let count = 0;
+      while (count < 500000) {
+        const wm = wmOf(w, a, ac);
+        if (wm >= target) break;
+        const row = getRow(wm);
+        const offset = weightedRandom(row);
+        const newIL = wm + offset;
+        const cat = Math.floor(Math.random() * 3);
+        if (cat === 0)      w  = Math.max(w, newIL);
+        else if (cat === 1) a  = Math.max(a, newIL);
+        else                ac = Math.max(ac, newIL);
+        count++;
+      }
+      results.push(count);
+    }
+
+    results.sort((x, y) => x - y);
+    const n = results.length;
+    const mean   = results.reduce((s, v) => s + v, 0) / n;
+    const median = results[Math.floor(n * 0.5)];
+    const p75    = results[Math.floor(n * 0.75)];
+    const p90    = results[Math.floor(n * 0.90)];
+    const p95    = results[Math.floor(n * 0.95)];
+
+    document.getElementById('sim-mean').textContent   = mean.toFixed(1);
+    document.getElementById('sim-median').textContent = median;
+    document.getElementById('sim-p90').textContent    = p90;
+
+    // percentiles line — all numeric, safe via textContent nodes
+    const pEl = document.getElementById('sim-percentiles');
+    pEl.textContent = '';
+    [
+      ['75%ile', p75],
+      ['90%ile', p90],
+      ['95%ile', p95],
+      ['最大', results[n - 1]],
+    ].forEach(([label, val], i) => {
+      if (i > 0) pEl.appendChild(document.createTextNode('   '));
+      pEl.appendChild(document.createTextNode(label + ': '));
+      const s = document.createElement('strong');
+      s.textContent = val;
+      pEl.appendChild(s);
+    });
+
+    drawHistogram(results);
+    document.getElementById('sim-progress').style.display = 'none';
+    document.getElementById('sim-result').style.display = 'block';
+    document.getElementById('sim-btn').disabled = false;
+  }, 20);
+}
+
+function drawHistogram(results) {
+  const canvas = document.getElementById('sim-chart');
+  const W = canvas.parentElement.clientWidth || 700;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const min = results[0];
+  const max = results[results.length - 1];
+  const BUCKETS = Math.min(50, max - min + 1);
+  const bSize = Math.max(1, Math.ceil((max - min + 1) / BUCKETS));
+  const counts = new Array(BUCKETS).fill(0);
+  for (const v of results) {
+    counts[Math.min(BUCKETS - 1, Math.floor((v - min) / bSize))]++;
+  }
+  const maxCount = Math.max(...counts);
+
+  const pad = { top: 10, bottom: 24, left: 6, right: 6 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+  const barW = cW / BUCKETS;
+
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  counts.forEach((count, i) => {
+    if (!count) return;
+    const bH = (count / maxCount) * cH;
+    const t = i / BUCKETS;
+    ctx.fillStyle = `hsl(${215 + t * 30},65%,${38 + t * 18}%)`;
+    ctx.fillRect(pad.left + i * barW + 1, pad.top + cH - bH, barW - 2, bH);
+  });
+
+  ctx.strokeStyle = '#30363d';
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + cH);
+  ctx.lineTo(pad.left + cW, pad.top + cH);
+  ctx.stroke();
+
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
+    const v = Math.round(min + t * (max - min));
+    ctx.fillText(v, pad.left + t * cW, H - 6);
+  });
+}
+
+// ── Tab 3: Detail table ───────────────────────────────────────
+document.getElementById('t-wm').addEventListener('input', function () {
+  document.getElementById('t-wm-val').textContent = this.value;
+  updateDetailTable();
+});
+
+function updateDetailTable() {
+  const wm = parseInt(document.getElementById('t-wm').value, 10);
+  document.getElementById('t-wm-val').textContent = wm;
+  const row = DATA[String(wm)];
+  if (!row) return;
+
+  const offsets = Object.keys(row).map(Number).sort((a, b) => b - a);
+  const maxProb = Math.max(...Object.values(row));
+  const tbody = document.getElementById('detail-body');
+  tbody.textContent = '';
+
+  offsets.forEach(off => {
+    const prob = row[String(off)];
+    const il = wm + off;
+    const color = offColor(off);
+    const barW = Math.round((prob / maxProb) * 120);
+
+    const tr = document.createElement('tr');
+
+    const tdIL = document.createElement('td');
+    const s = document.createElement('strong');
+    s.textContent = il;
+    tdIL.appendChild(s);
+    tr.appendChild(tdIL);
+
+    const tdOff = document.createElement('td');
+    tdOff.style.color = color;
+    tdOff.textContent = offStr(off);
+    tr.appendChild(tdOff);
+
+    const tdBar = document.createElement('td');
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex';
+    wrap.style.alignItems = 'center';
+    wrap.style.gap = '8px';
+    const bar = document.createElement('div');
+    bar.className = 'mini-bar';
+    bar.style.width = barW + 'px';
+    bar.style.background = color;
+    const pct = document.createElement('span');
+    pct.textContent = prob.toFixed(2) + '%';
+    wrap.appendChild(bar);
+    wrap.appendChild(pct);
+    tdBar.appendChild(wrap);
+    tr.appendChild(tdBar);
+
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Tab 3: Heatmap ────────────────────────────────────────────
+let heatBuilt = false;
+
+function buildHeatmap() {
+  heatBuilt = true;
+  const allOffsets = new Set();
+  Object.values(DATA).forEach(r => Object.keys(r).forEach(k => allOffsets.add(parseInt(k, 10))));
+  const offsets = [...allOffsets].sort((a, b) => b - a);
+  const wms = Object.keys(DATA).map(Number).sort((a, b) => a - b);
+
+  let maxProb = 0;
+  wms.forEach(wm => Object.values(DATA[String(wm)]).forEach(v => { if (v > maxProb) maxProb = v; }));
+
+  const table = document.getElementById('heat-table');
+  table.textContent = '';
+
+  // Header
+  const thead = table.createTHead();
+  const hRow = thead.insertRow();
+  const thWM = document.createElement('th');
+  thWM.className = 'wm-col-header';
+  thWM.textContent = 'WM';
+  hRow.appendChild(thWM);
+  offsets.forEach(off => {
+    const th = document.createElement('th');
+    th.textContent = offStr(off);
+    th.style.color = offColor(off);
+    hRow.appendChild(th);
+  });
+
+  // Body
+  const tbody = table.createTBody();
+  wms.forEach(wm => {
+    const row = DATA[String(wm)];
+    const tr = tbody.insertRow();
+
+    const tdWM = document.createElement('td');
+    tdWM.className = 'wm-col';
+    tdWM.textContent = wm;
+    tr.appendChild(tdWM);
+
+    offsets.forEach(off => {
+      const td = document.createElement('td');
+      const prob = row[String(off)];
+      if (!prob) {
+        td.style.color = 'var(--border)';
+        td.textContent = '—';
+      } else {
+        const alpha = (0.08 + (prob / maxProb) * 0.82).toFixed(2);
+        const hue = off > 0 ? 130 : off === 0 ? 210 : 0;
+        const sat = off === 0 ? 50 : 65;
+        td.style.background = 'hsla(' + hue + ',' + sat + '%,50%,' + alpha + ')';
+        td.style.color = 'var(--text)';
+        td.textContent = prob.toFixed(1);
+      }
+      tr.appendChild(td);
+    });
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────
+calcWatermark();
+updateDetailTable();
+</script>
+</body>
+</html>
